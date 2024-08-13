@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   build-and-push:
     name: Build and Deploy Docker Image to AWS ECR
@@ -52,6 +53,16 @@ jobs:
     - name: Build Docker Image
       run: |
         docker build -t frontend .
+
+    - name: Tag and Push Docker Image with latest tag
+      run: |
+        docker tag frontend:latest ${{ env.ECR_REPO_URI }}:latest
+        docker push ${{ env.ECR_REPO_URI }}:latest
+
+    - name: Run a sleep command for 5 minutes
+      run: |
+        echo "Sleeping for 5 minutes..."
+        sleep 300
 
     - name: Tag and Push Docker Image
       run: |
