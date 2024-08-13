@@ -2,12 +2,17 @@ name: Build and Deploy Docker Image to AWS ECR
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    types:
+      - closed
+    branches:
+      - main
 
 jobs:
   build-and-push:
+    if: github.event.pull_request.merged == true
     name: Build and Deploy Docker Image to AWS ECR
     runs-on: ubuntu-24.04
     permissions:
