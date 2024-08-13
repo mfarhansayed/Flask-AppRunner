@@ -3,7 +3,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-  return "Flask and AppRunner!"
+  return "Flask on AppRunner!"
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=5000)
