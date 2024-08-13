@@ -1,0 +1,61 @@
+name: Build and Deploy Docker Image to AWS ECR
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    name: Build and Deploy Docker Image to AWS ECR
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      REGION: ${{ secrets.aws_region }}
+      IAM_ROLE: ${{ secrets.iam_role }}
+      ECR_REPO_URI: "590183814629.dkr.ecr.ap-south-1.amazonaws.com/frontend"
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Fetch all history, including tags
+
+    - name: Set up Git
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ env.IAM_ROLE }}
+        role-session-name: github-actions-federation
+        aws-region: ${{ env.REGION }}
+
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPO_URI }}
+
+    - name: Get Latest Git Tag and Commit SHA
+      id: tag
+      run: |
+        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        commit_sha=$(git rev-parse --short HEAD)
+        tag_commitid="${latest_tag}-${commit_sha}"
+        echo "tag_commitid=${tag_commitid}" >> $GITHUB_ENV
+
+    - name: Build Docker Image
+      run: |
+        docker build -t frontend .
+
+    - name: Tag and Push Docker Image
+      run: |
+        docker tag frontend:latest ${{ env.ECR_REPO_URI }}:${{ env.tag_commitid }}
+        docker push ${{ env.ECR_REPO_URI }}:${{ env.tag_commitid }}
