@@ -21,6 +21,8 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Fetch all history, including tags
 
     - name: Set up Git
       run: |
@@ -44,7 +46,7 @@ jobs:
     - name: Get Latest Git Tag and Commit SHA
       id: tag
       run: |
-        latest_tag=$(git describe --tags --abbrev=0)
+        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         commit_sha=$(git rev-parse --short HEAD)
         tag_commitid="${latest_tag}-${commit_sha}"
         echo "tag_commitid=${tag_commitid}" >> $GITHUB_ENV
