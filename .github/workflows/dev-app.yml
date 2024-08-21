@@ -39,38 +39,46 @@ jobs:
           -Dsonar.organization=my-org
           -Dsonar.projectKey=flask-app
 
-    # Further steps for Docker build and push to ECR can follow here
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ env.IAM_ROLE }}
+        role-session-name: github-actions-federation
+        aws-region: ${{ env.REGION }}
 
-    # - name: Set up Docker Buildx
-    #   uses: docker/setup-buildx-action@v2
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPO_URI }}
 
-    # - name: Configure AWS Credentials
-    #   uses: aws-actions/configure-aws-credentials@v1
-    #   with:
-    #     role-to-assume: ${{ env.IAM_ROLE }}
-    #     role-session-name: github-actions-federation
-    #     aws-region: ${{ env.REGION }}
+    - name: Get Latest Git Tag and Commit SHA
+      id: tag
+      run: |
+        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        commit_sha=$(git rev-parse --short HEAD)
+        tag_commitid="${latest_tag}-${commit_sha}"
+        echo "tag_commitid=${tag_commitid}" >> $GITHUB_ENV
 
-    # - name: Login to Amazon ECR
+    - name: Build Docker Image
+      run: |
+        docker build -t flask-app-demo .
+
+    - name: Tag Docker Image
+      run: |
+        docker tag flask-app-demo:latest ${{ env.ECR_REPO_URI }}:latest
+
+    - name: Run Snyk to check Docker image for vulnerabilities
+      uses: snyk/actions/docker@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: ${{ env.ECR_REPO_URI }}:latest
+        args: --severity-threshold=high
+
+    # - name: Push Docker Image to ECR
     #   run: |
-    #     aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPO_URI }}
-
-    # - name: Get Latest Git Tag and Commit SHA
-    #   id: tag
-    #   run: |
-    #     latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-    #     commit_sha=$(git rev-parse --short HEAD)
-    #     tag_commitid="${latest_tag}-${commit_sha}"
-    #     echo "tag_commitid=${tag_commitid}" >> $GITHUB_ENV
-
-    # - name: Build Docker Image
-    #   run: |
-    #     docker build -t frontend .
-
-    # - name: Tag and Push Docker Image with latest tag
-    #   run: |
-    #     docker tag frontend:latest ${{ env.ECR_REPO_URI }}:latest
     #     docker push ${{ env.ECR_REPO_URI }}:latest
 
     # - name: Run a sleep command for 5 minutes
