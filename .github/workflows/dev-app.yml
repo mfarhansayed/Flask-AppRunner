@@ -15,7 +15,7 @@ jobs:
     env:
       REGION: ${{ secrets.aws_region }}
       IAM_ROLE: ${{ secrets.iam_role }}
-      ECR_REPO_URI: "590183814629.dkr.ecr.ap-south-1.amazonaws.com/frontend"
+      ECR_REPO_URI: "590183814629.dkr.ecr.us-west-2.amazonaws.com/flask-app-demo"
 
     steps:
     - name: Checkout Repository
