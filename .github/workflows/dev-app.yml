@@ -75,11 +75,11 @@ jobs:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: ${{ env.ECR_REPO_URI }}:latest
-        args: --severity-threshold=high
+        #args: --severity-threshold=high
 
-    # - name: Push Docker Image to ECR
-    #   run: |
-    #     docker push ${{ env.ECR_REPO_URI }}:latest
+    - name: Push Docker Image to ECR
+      run: |
+        docker push ${{ env.ECR_REPO_URI }}:latest
 
     # - name: Run a sleep command for 5 minutes
     #   run: |
