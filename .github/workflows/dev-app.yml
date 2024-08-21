@@ -27,43 +27,54 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+    - name: SonarQube Scan
+      uses: sonarsource/sonarqube-scan-action@master
       with:
-        role-to-assume: ${{ env.IAM_ROLE }}
-        role-session-name: github-actions-federation
-        aws-region: ${{ env.REGION }}
+        projectBaseDir: .
+        args: >
+          -Dsonar.organization=my-org
+          -Dsonar.projectKey=flask-app
+        env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-    - name: Login to Amazon ECR
-      run: |
-        aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPO_URI }}
+    # - name: Set up Docker Buildx
+    #   uses: docker/setup-buildx-action@v2
 
-    - name: Get Latest Git Tag and Commit SHA
-      id: tag
-      run: |
-        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-        commit_sha=$(git rev-parse --short HEAD)
-        tag_commitid="${latest_tag}-${commit_sha}"
-        echo "tag_commitid=${tag_commitid}" >> $GITHUB_ENV
+    # - name: Configure AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     role-to-assume: ${{ env.IAM_ROLE }}
+    #     role-session-name: github-actions-federation
+    #     aws-region: ${{ env.REGION }}
 
-    - name: Build Docker Image
-      run: |
-        docker build -t frontend .
+    # - name: Login to Amazon ECR
+    #   run: |
+    #     aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPO_URI }}
 
-    - name: Tag and Push Docker Image with latest tag
-      run: |
-        docker tag frontend:latest ${{ env.ECR_REPO_URI }}:latest
-        docker push ${{ env.ECR_REPO_URI }}:latest
+    # - name: Get Latest Git Tag and Commit SHA
+    #   id: tag
+    #   run: |
+    #     latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+    #     commit_sha=$(git rev-parse --short HEAD)
+    #     tag_commitid="${latest_tag}-${commit_sha}"
+    #     echo "tag_commitid=${tag_commitid}" >> $GITHUB_ENV
 
-    - name: Run a sleep command for 5 minutes
-      run: |
-        echo "Sleeping for 5 minutes..."
-        sleep 300
+    # - name: Build Docker Image
+    #   run: |
+    #     docker build -t frontend .
 
-    - name: Tag and Push Docker Image
-      run: |
-        docker tag frontend:latest ${{ env.ECR_REPO_URI }}:${{ env.tag_commitid }}
-        docker push ${{ env.ECR_REPO_URI }}:${{ env.tag_commitid }}
+    # - name: Tag and Push Docker Image with latest tag
+    #   run: |
+    #     docker tag frontend:latest ${{ env.ECR_REPO_URI }}:latest
+    #     docker push ${{ env.ECR_REPO_URI }}:latest
+
+    # - name: Run a sleep command for 5 minutes
+    #   run: |
+    #     echo "Sleeping for 5 minutes..."
+    #     sleep 300
+
+    # - name: Tag and Push Docker Image
+    #   run: |
+    #     docker tag frontend:latest ${{ env.ECR_REPO_URI }}:${{ env.tag_commitid }}
+    #     docker push ${{ env.ECR_REPO_URI }}:${{ env.tag_commitid }}
