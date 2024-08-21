@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - Flask-App-demo
+
 jobs:
   build-and-push:
     name: Build and Deploy Docker Image to AWS ECR
@@ -29,14 +30,17 @@ jobs:
 
     - name: SonarQube Scan
       uses: sonarsource/sonarqube-scan-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
         projectBaseDir: .
         args: >
           -Dsonar.organization=my-org
           -Dsonar.projectKey=flask-app
-        env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    # Further steps for Docker build and push to ECR can follow here
+
 
     # - name: Set up Docker Buildx
     #   uses: docker/setup-buildx-action@v2
